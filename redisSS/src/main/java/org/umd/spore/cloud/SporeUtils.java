@@ -1,5 +1,6 @@
 package org.umd.spore.cloud;
 
+import com.yahoo.ycsb.ByteIterator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,8 +18,8 @@ import java.security.spec.X509EncodedKeySpec;
  *  - digital signatures 
  *  - read/write keys to disk
  */
-@Data
 
+@Data
 public class SporeUtils {
     
     private String publicKeyPath;
@@ -35,6 +36,12 @@ public class SporeUtils {
             keyGeneration();
         }
     }
+    
+    //TODO: single field sign
+    //TODO: record signature
+    //TODO: verification of record
+    //TODO: verification of field
+    
     
     private void keyGeneration() {
         try {

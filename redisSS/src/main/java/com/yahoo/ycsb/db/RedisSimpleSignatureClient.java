@@ -6,10 +6,7 @@
  */
 
 package com.yahoo.ycsb.db;
-import com.yahoo.ycsb.DB;
-import com.yahoo.ycsb.DBException;
-import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.StringByteIterator;
+import com.yahoo.ycsb.*;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -19,8 +16,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import org.umd.spore.cloud.SporeStrings;
-import org.umd.spore.cloud.SporeUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 
@@ -28,7 +23,6 @@ public class RedisSimpleSignatureClient extends DB {
 
     private Jedis jedis;
 
-    public static final String KEY_FILE = "redisSS.keyfile";
     public static final String HOST_PROPERTY = "redis.host";
     public static final String PORT_PROPERTY = "redis.port";
     public static final String PASSWORD_PROPERTY = "redis.password";
@@ -55,23 +49,12 @@ public class RedisSimpleSignatureClient extends DB {
         if (password != null) {
             jedis.auth(password);
         }
-        
-        String keyFile = props.getProperty(KEY_FILE);
-        if (keyFile == null) {
-                keyFile = SporeStrings.SPORE_KEY;
-        }
-
     }
 
     public void cleanup() throws DBException {
         jedis.disconnect();
     }
 
-    /*
-        
-     */
-
-    
     /* Calculate a hash for a key to store it in an index.  The actual return
      * value of this function is not interesting -- it primarily needs to be
      * fast and scattered along the whole space of doubles.  In a real world
@@ -107,6 +90,7 @@ public class RedisSimpleSignatureClient extends DB {
 
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
+
         if (jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK")) {
             jedis.zadd(INDEX_KEY, hash(key), key);
             return 0;
