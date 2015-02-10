@@ -90,7 +90,7 @@ public class RedisSimpleSignatureClient extends DB {
 
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
-
+        System.out.println(StringByteIterator.getStringMap(values));
         if (jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK")) {
             jedis.zadd(INDEX_KEY, hash(key), key);
             return 0;
