@@ -3,17 +3,24 @@ package org.umd.spore.cloud;
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.StringByteIterator;
-import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import lombok.Data;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Iterator;
+import java.security.SecureRandom;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 import java.util.Map;
 
 /**
@@ -33,6 +40,7 @@ public class SporeUtils {
     private PrivateKey privateKey;
     private PublicKey publicKey;
     private Signature signObj;
+    private Signature verifyObj;
 
     /**
      * Function to either load the keys from disk or to generate them.
@@ -44,6 +52,15 @@ public class SporeUtils {
             readKeys();
         } catch (Exception e) {
             keyGeneration();
+        }
+        try {
+            signObj = Signature.getInstance("SHA1withRSA", "SUN");
+            verifyObj = Signature.getInstance("SHA1withRSA", "SUN");
+            signObj.initSign(privateKey);
+            verifyObj.initVerify(publicKey);
+        } catch (Exception signCreation) {
+            System.out.println(signCreation.getMessage());
+            signCreation.printStackTrace();
         }
     }
     
@@ -60,7 +77,7 @@ public class SporeUtils {
      * @throws Exception
      */
     public Map<String, ByteIterator> signRecord(Map<String, ByteIterator>values) throws Exception {
-        byte[] mapBytes = StringByteIterator.getStringMap(values).toString().getBytes(StandardCharsets.UTF_8);
+        byte[] mapBytes = StringByteIterator.getStringMap(values).toString().getBytes();
         signObj.update(mapBytes);
         values.put("sign", new ByteArrayByteIterator(signObj.sign()));
         return values;
@@ -75,15 +92,33 @@ public class SporeUtils {
     public Map<String, ByteIterator> signFields(Map<String, ByteIterator>values) throws Exception {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
-            byte[] fieldBytes = valueIt.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] fieldBytes = valueIt.toString().getBytes();
             signObj.update(fieldBytes);
             byte[] signature = signObj.sign();
-            byte[] signedField = new byte[fieldBytes.length+signature.length];
-            System.arraycopy(fieldBytes, 0, signedField, 0, fieldBytes.length);
-            System.arraycopy(signature, 0, signedField, fieldBytes.length, signature.length);
+            byte[] signedField = ArrayUtils.addAll(fieldBytes, signature);
             values.put(s,new ByteArrayByteIterator(signedField));
         }
         return values;
+    }
+    
+    public boolean verifySignatureRecord(Map<String, ByteIterator> result) throws Exception {
+        boolean verificationResult = false;
+        if (result == null) {
+            return true;
+        }
+        byte[] signature = result.get("sign").toArray();
+        result.remove("sign");
+        byte[] resultBytes = StringByteIterator.getStringMap(result).toString().getBytes();
+        verifyObj.update(resultBytes);
+        verificationResult = verifyObj.verify(signature);
+        return verificationResult;
+    }
+    
+    public boolean verifySignatureOnFields() {
+        boolean verificationResult = false;
+        
+        return verificationResult;
+        
     }
     
     private void keyGeneration() {
@@ -95,8 +130,6 @@ public class SporeUtils {
             keyPair = pairGenerator.generateKeyPair();
             privateKey = keyPair.getPrivate();
             publicKey = keyPair.getPublic();
-            signObj = Signature.getInstance("SHA1withRSA", "SUN");
-            signObj.initSign(privateKey);
             saveKeys();
 
         } catch (Exception e) {
@@ -127,8 +160,7 @@ public class SporeUtils {
             keyBytes = readKeyBytes(privateKeyPath);
             PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(keyBytes);
             privateKey = keyFactory.generatePrivate(privKeySpec);
-            signObj = Signature.getInstance("SHA1withRSA", "SUN");
-            signObj.initSign(privateKey);
+
         }
     }
     
@@ -145,6 +177,6 @@ public class SporeUtils {
         fIn.close();
         return keyBytes;
     }
-    
+
 }
 
