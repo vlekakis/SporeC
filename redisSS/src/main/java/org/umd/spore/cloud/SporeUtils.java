@@ -20,7 +20,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
 import java.util.Map;
 
 /**
@@ -36,7 +35,6 @@ public class SporeUtils {
     
     private String publicKeyPath;
     private String privateKeyPath;
-    private KeyPair keyPair;
     private PrivateKey privateKey;
     private PublicKey publicKey;
     private Signature signObj;
@@ -54,8 +52,8 @@ public class SporeUtils {
             keyGeneration();
         }
         try {
-            signObj = Signature.getInstance("SHA1withRSA", "SUN");
-            verifyObj = Signature.getInstance("SHA1withRSA", "SUN");
+            signObj = Signature.getInstance("SHA1withRSA");
+            verifyObj = Signature.getInstance("SHA1withRSA");
             signObj.initSign(privateKey);
             verifyObj.initVerify(publicKey);
         } catch (Exception signCreation) {
@@ -64,9 +62,6 @@ public class SporeUtils {
         }
     }
     
-    //TODO: verification of record
-    //TODO: verification of field
-
 
     /**
      * 
@@ -84,7 +79,7 @@ public class SporeUtils {
     }
 
     /**
-     * *
+     * 
      * @param values The record to be signed
      * @return The record with all the fields now having a signature at their end
      * @throws Exception
@@ -92,7 +87,7 @@ public class SporeUtils {
     public Map<String, ByteIterator> signFields(Map<String, ByteIterator>values) throws Exception {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
-            byte[] fieldBytes = valueIt.toString().getBytes();
+            byte[] fieldBytes = valueIt.toArray();
             signObj.update(fieldBytes);
             byte[] signature = signObj.sign();
             byte[] signedField = ArrayUtils.addAll(fieldBytes, signature);
@@ -100,7 +95,15 @@ public class SporeUtils {
         }
         return values;
     }
-    
+
+    /**
+     * This function looks the whole record and checks if it is verified
+     * The signature bytes are placed in a new field
+     *
+     * @param result Contains the data read from the store
+     * @return True or False based on the signature verification
+     * @throws Exception
+     */
     public boolean verifySignatureRecord(Map<String, ByteIterator> result) throws Exception {
         boolean verificationResult = false;
         if (result == null) {
@@ -113,21 +116,38 @@ public class SporeUtils {
         verificationResult = verifyObj.verify(signature);
         return verificationResult;
     }
-    
-    public boolean verifySignatureOnFields() {
+
+    /**
+     * Signature verification per field. It only returns true if all the fields are verified
+     * @param result, data from the store
+     * @param fieldSize, data size to find the beginning of the signature
+     * @return True if all the fields are verified
+     * @throws Exception
+     */
+    public boolean verifySignatureOnFields(Map<String, ByteIterator> result, int fieldSize) throws  Exception {
         boolean verificationResult = false;
         
-        return verificationResult;
-        
+        for (String s:result.keySet()) {
+            ByteIterator value = result.get(s);
+            byte[] signedFieldBytes = value.toArray();
+            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, fieldSize);
+            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldSize, signedFieldBytes.length);
+            verifyObj.update(fieldBytes);
+            verificationResult = verifyObj.verify(signature);
+            if (!verificationResult) {
+                return false;
+            }
+        }
+        return true;
     }
     
     private void keyGeneration() {
         try {
-            KeyPairGenerator pairGenerator = KeyPairGenerator.getInstance("RSA", "SUN");
+            KeyPairGenerator pairGenerator = KeyPairGenerator.getInstance("RSA");
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
             pairGenerator.initialize(1024, random);
             
-            keyPair = pairGenerator.generateKeyPair();
+            KeyPair keyPair = pairGenerator.generateKeyPair();
             privateKey = keyPair.getPrivate();
             publicKey = keyPair.getPublic();
             saveKeys();
@@ -149,7 +169,7 @@ public class SporeUtils {
     
     private void readKeys() throws Exception {
         byte[] keyBytes;
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SUN");
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         
         if (StringUtils.isNotBlank(publicKeyPath)) {
             keyBytes = readKeyBytes(publicKeyPath);
