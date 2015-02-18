@@ -2,15 +2,14 @@ package org.umd.spore.cloud;
 
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.StringByteIterator;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import lombok.Data;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -32,6 +31,9 @@ import java.util.Map;
 
 @Data
 public class SporeUtils {
+    
+    
+    private static final String SIGNATURE_RECORD_KEY = "signature";
     
     private String publicKeyPath;
     private String privateKeyPath;
@@ -65,21 +67,6 @@ public class SporeUtils {
 
     /**
      * 
-     * Record-based signature
-     *
-     * @param values The record to be inserted in the data store
-     * @return The record with an extra field that represents the signature of the record
-     * @throws Exception
-     */
-    public Map<String, ByteIterator> signRecord(Map<String, ByteIterator>values) throws Exception {
-        byte[] mapBytes = StringByteIterator.getStringMap(values).toString().getBytes();
-        signObj.update(mapBytes);
-        values.put("sign", new ByteArrayByteIterator(signObj.sign()));
-        return values;
-    }
-
-    /**
-     * 
      * @param values The record to be signed
      * @return The record with all the fields now having a signature at their end
      * @throws Exception
@@ -95,28 +82,7 @@ public class SporeUtils {
         }
         return values;
     }
-
-    /**
-     * This function looks the whole record and checks if it is verified
-     * The signature bytes are placed in a new field
-     *
-     * @param result Contains the data read from the store
-     * @return True or False based on the signature verification
-     * @throws Exception
-     */
-    public boolean verifySignatureRecord(Map<String, ByteIterator> result) throws Exception {
-        boolean verificationResult = false;
-        if (result == null) {
-            return true;
-        }
-        byte[] signature = result.get("sign").toArray();
-        result.remove("sign");
-        byte[] resultBytes = StringByteIterator.getStringMap(result).toString().getBytes();
-        verifyObj.update(resultBytes);
-        verificationResult = verifyObj.verify(signature);
-        return verificationResult;
-    }
-
+    
     /**
      * Signature verification per field. It only returns true if all the fields are verified
      * @param result, data from the store
@@ -125,16 +91,14 @@ public class SporeUtils {
      * @throws Exception
      */
     public boolean verifySignatureOnFields(Map<String, ByteIterator> result, int fieldSize) throws  Exception {
-        boolean verificationResult = false;
-        
+
         for (String s:result.keySet()) {
             ByteIterator value = result.get(s);
             byte[] signedFieldBytes = value.toArray();
             byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, fieldSize);
             byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldSize, signedFieldBytes.length);
             verifyObj.update(fieldBytes);
-            verificationResult = verifyObj.verify(signature);
-            if (!verificationResult) {
+            if (BooleanUtils.isFalse(verifyObj.verify(signature))) {
                 return false;
             }
         }
@@ -153,8 +117,14 @@ public class SporeUtils {
             saveKeys();
 
         } catch (Exception e) {
-
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
+    }
+    
+    public void printByteArrayHex(String message, byte[] data) {
+        String hexString = new String(Hex.encodeHex(data));
+        System.out.println(message+": "+hexString);
     }
     
     
