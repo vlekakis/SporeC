@@ -7,7 +7,7 @@ package umd.spore.cloud;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.RandomByteIterator;
 import com.yahoo.ycsb.StringByteIterator;
-import com.yahoo.ycsb.generator.IntegerGenerator;import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.Assert;
 import org.umd.spore.cloud.SporeUtils;
