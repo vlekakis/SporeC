@@ -82,7 +82,7 @@ public class SporeUtils {
         }
         return values;
     }
-    
+
     /**
      * Signature verification per field. It only returns true if all the fields are verified
      * @param result, data from the store
