@@ -4,12 +4,10 @@ package umd.spore.cloud;
  * Created by lex on 2/12/15.
  */
 
-import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.RandomByteIterator;
 import com.yahoo.ycsb.StringByteIterator;
-import com.yahoo.ycsb.generator.IntegerGenerator;
-import org.apache.commons.io.FileUtils;
+import com.yahoo.ycsb.generator.IntegerGenerator;import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.Assert;
 import org.umd.spore.cloud.SporeUtils;
@@ -31,8 +29,8 @@ public class SporeUtilsTest {
         try {
 
             SporeUtils sp = new SporeUtils();
-            sp.setPublicKeyPath("testFiles/public2.key");
-            sp.setPrivateKeyPath("testFiles/private2.key");
+            sp.setPublicKeyPath(PUBLIC_PATH);
+            sp.setPrivateKeyPath(PRIVATE_PATH);
             sp.loadKeys();
 
             
