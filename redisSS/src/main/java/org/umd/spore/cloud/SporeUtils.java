@@ -19,6 +19,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,7 +33,7 @@ import java.util.Map;
 @Data
 public class SporeUtils {
     
-    
+
     private static final String SIGNATURE_RECORD_KEY = "signature";
     
     private String publicKeyPath;
@@ -71,7 +72,7 @@ public class SporeUtils {
      * @return The record with all the fields now having a signature at their end
      * @throws Exception
      */
-    public Map<String, ByteIterator> signFields(Map<String, ByteIterator>values) throws Exception {
+    public HashMap<String, ByteIterator> signFields(HashMap<String, ByteIterator>values) throws Exception {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
             byte[] fieldBytes = valueIt.toArray();
@@ -90,7 +91,7 @@ public class SporeUtils {
      * @return True if all the fields are verified
      * @throws Exception
      */
-    public boolean verifySignatureOnFields(Map<String, ByteIterator> result, int fieldSize) throws  Exception {
+    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result, int fieldSize) throws  Exception {
 
         for (String s:result.keySet()) {
             ByteIterator value = result.get(s);

@@ -26,15 +26,16 @@ public class SporeUtilsTest {
     
     @Test
     public void testSignVerifyRecordSingleField() {
+        System.out.println("testing.....testSignVerifyRecordSingleField");
         try {
-
+            
             SporeUtils sp = new SporeUtils();
             sp.setPublicKeyPath(PUBLIC_PATH);
             sp.setPrivateKeyPath(PRIVATE_PATH);
             sp.loadKeys();
 
             
-            Map<String, ByteIterator>record = new HashMap<String, ByteIterator>(1);
+            HashMap<String, ByteIterator>record = new HashMap<String, ByteIterator>(1);
             String val = "value";
             record.put("record", new StringByteIterator(val));
             
@@ -60,7 +61,7 @@ public class SporeUtilsTest {
             
             int numFields = 20;
             int sizeFields = 100;
-            Map<String, ByteIterator> record = new HashMap<String, ByteIterator>(numFields);
+            HashMap<String, ByteIterator> record = new HashMap<String, ByteIterator>(numFields);
             for (int i=0; i<numFields; i++) {
                 record.put(Integer.valueOf(i).toString(), new RandomByteIterator(sizeFields));
             }
@@ -79,6 +80,7 @@ public class SporeUtilsTest {
     
     @Test
     public void testLoadKeysWithKeyGeneration() {
+        System.out.println("testing.....testLoadKeysWithKeyGeneration");
         SporeUtils sp = new SporeUtils();
         sp.setPublicKeyPath("testFiles/public.key");
         sp.setPrivateKeyPath("testFiles/private.key");
@@ -101,7 +103,7 @@ public class SporeUtilsTest {
 
     @Test
     public void testLoadKeysLoadingFromDisk() {
-        
+        System.out.println("testing.....testLoadKeysLoadingFromDisk");
         SporeUtils sp = new SporeUtils();
         sp.setPublicKeyPath("testFiles/public2.key");
         sp.setPrivateKeyPath("testFiles/private2.key");

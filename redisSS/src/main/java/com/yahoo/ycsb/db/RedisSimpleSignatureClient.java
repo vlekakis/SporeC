@@ -16,13 +16,18 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import com.yahoo.ycsb.measurements.Measurements;
+import org.apache.commons.lang3.StringUtils;
+import org.umd.spore.cloud.SporeStrings;
+import org.umd.spore.cloud.SporeUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 
 public class RedisSimpleSignatureClient extends DB {
 
     private Jedis jedis;
-
+    private SporeUtils sporeSignatures;
+    
     public static final String HOST_PROPERTY = "redis.host";
     public static final String PORT_PROPERTY = "redis.port";
     public static final String PASSWORD_PROPERTY = "redis.password";
@@ -41,6 +46,7 @@ public class RedisSimpleSignatureClient extends DB {
             port = Protocol.DEFAULT_PORT;
         }
         String host = props.getProperty(HOST_PROPERTY);
+        
 
         jedis = new Jedis(host, port);
         jedis.connect();
@@ -49,6 +55,23 @@ public class RedisSimpleSignatureClient extends DB {
         if (password != null) {
             jedis.auth(password);
         }
+        
+        /*
+            Setup spore utils for signatures 
+         */
+        String publicKeyPath = props.getProperty(SporeStrings.PUBLIC_KEY_PATH);
+        if (StringUtils.isBlank(publicKeyPath)) {
+            publicKeyPath = SporeStrings.DEFAULT_PUBLIC_KEY_PATH;
+        }
+        String privateKeyPath = props.getProperty(SporeStrings.PRIVATE_KEY_PATH);
+        if (StringUtils.isBlank(privateKeyPath)) {
+            privateKeyPath = SporeStrings.DEFAULT_PRIVATE_KEY_PATH;
+        }
+        
+        sporeSignatures = new SporeUtils();
+        sporeSignatures.setPublicKeyPath(publicKeyPath);
+        sporeSignatures.setPrivateKeyPath(privateKeyPath);
+        sporeSignatures.loadKeys();
     }
 
     public void cleanup() throws DBException {
@@ -90,6 +113,17 @@ public class RedisSimpleSignatureClient extends DB {
 
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
+        try {
+            long st = System.currentTimeMillis();
+            values = sporeSignatures.signFields(values);
+            long en = System.currentTimeMillis();
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(en-st));
+            
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return  1;
+        }
         if (jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK")) {
             jedis.zadd(INDEX_KEY, hash(key), key);
             return 0;
