@@ -152,11 +152,11 @@ public class RedisSimpleSignatureClient extends DB {
         if (jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK")) {
             jedis.zadd(INDEX_KEY, hash(key), key);
             enInsert = System.currentTimeMillis();
-            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enInsert-stInsert));
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_INSERT, (int)(enInsert-stInsert));
             return 0;
         }
         enInsert = System.currentTimeMillis();
-        Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enInsert-stInsert));
+        Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_INSERT, (int)(enInsert-stInsert));
         return 1;
     }
 
