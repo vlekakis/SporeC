@@ -3,7 +3,9 @@ package org.umd.spore.cloud;
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
 
-import org.apache.commons.codec.binary.Hex;
+import com.yahoo.ycsb.StringByteIterator;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -20,7 +22,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.HashMap;
-import java.util.Map;
+
 
 /**
  * @author vlekakis
@@ -43,12 +45,17 @@ public class SporeUtils {
     private Signature signObj;
     private Signature verifyObj;
 
+    private int keyLen;
+    private int signatureLength;
+    
     /**
      * Function to either load the keys from disk or to generate them.
      * The function generates them if while trying to find the keys get
      * and an Exception
      */
     public void loadKeys() {
+        //Signature length the number of octets in the key
+        signatureLength = keyLen / 8;
         try {
             readKeys();
         } catch (Exception e) {
@@ -76,7 +83,8 @@ public class SporeUtils {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
             byte[] fieldBytes = valueIt.toArray();
-            signObj.update(fieldBytes);
+            byte[] fieldDigest = DigestUtils.md5(fieldBytes);
+            signObj.update(fieldDigest);
             byte[] signature = signObj.sign();
             byte[] signedField = ArrayUtils.addAll(fieldBytes, signature);
             values.put(s,new ByteArrayByteIterator(signedField));
@@ -87,18 +95,20 @@ public class SporeUtils {
     /**
      * Signature verification per field. It only returns true if all the fields are verified
      * @param result, data from the store
-     * @param fieldSize, data size to find the beginning of the signature
      * @return True if all the fields are verified
      * @throws Exception
      */
-    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result, int fieldSize) throws  Exception {
+    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result) throws  Exception {
 
         for (String s:result.keySet()) {
             ByteIterator value = result.get(s);
+            
             byte[] signedFieldBytes = value.toArray();
-            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, fieldSize);
-            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldSize, signedFieldBytes.length);
-            verifyObj.update(fieldBytes);
+            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, signedFieldBytes.length-signatureLength);
+            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldBytes.length, signedFieldBytes.length);
+            byte[] fieldDigest = DigestUtils.md5(fieldBytes);
+            verifyObj.update(fieldDigest);
+            result.put(s,new ByteArrayByteIterator(fieldBytes));
             if (BooleanUtils.isFalse(verifyObj.verify(signature))) {
                 return false;
             }
@@ -110,7 +120,7 @@ public class SporeUtils {
         try {
             KeyPairGenerator pairGenerator = KeyPairGenerator.getInstance("RSA");
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-            pairGenerator.initialize(1024, random);
+            pairGenerator.initialize(keyLen, random);
             
             KeyPair keyPair = pairGenerator.generateKeyPair();
             privateKey = keyPair.getPrivate();
@@ -124,8 +134,7 @@ public class SporeUtils {
     }
     
     public void printByteArrayHex(String message, byte[] data) {
-        String hexString = new String(Hex.encodeHex(data));
-        System.out.println(message+": "+hexString);
+        System.out.println(message+"(size:"+data.length+") "+ Base64.encodeBase64String(data));
     }
     
     

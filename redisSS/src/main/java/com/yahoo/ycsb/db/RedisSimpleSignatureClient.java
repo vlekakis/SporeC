@@ -32,6 +32,7 @@ public class RedisSimpleSignatureClient extends DB {
     public static final String PORT_PROPERTY = "redis.port";
     public static final String PASSWORD_PROPERTY = "redis.password";
 
+
     public static final String INDEX_KEY = "_indices";
 
     public void init() throws DBException {
@@ -67,10 +68,12 @@ public class RedisSimpleSignatureClient extends DB {
         if (StringUtils.isBlank(privateKeyPath)) {
             privateKeyPath = SporeStrings.DEFAULT_PRIVATE_KEY_PATH;
         }
-        
+
+
         sporeSignatures = new SporeUtils();
         sporeSignatures.setPublicKeyPath(publicKeyPath);
         sporeSignatures.setPrivateKeyPath(privateKeyPath);
+        sporeSignatures.setKeyLen(1024);
         sporeSignatures.loadKeys();
     }
 
@@ -92,6 +95,8 @@ public class RedisSimpleSignatureClient extends DB {
     @Override
     public int read(String table, String key, Set<String> fields,
                     HashMap<String, ByteIterator> result) {
+        
+        long stRead = System.currentTimeMillis();
         if (fields == null) {
             StringByteIterator.putAllAsByteIterators(result, jedis.hgetAll(key));
         }
@@ -108,26 +113,50 @@ public class RedisSimpleSignatureClient extends DB {
             }
             assert !fieldIterator.hasNext() && !valueIterator.hasNext();
         }
+        long enRead = System.currentTimeMillis();
+        Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_READ, (int)(enRead-stRead));
+
+
+        try {
+            long stVerify = System.currentTimeMillis();
+            boolean verifySign = sporeSignatures.verifySignatureOnFields(result);
+            if (!verifySign) {
+                throw new RuntimeException("Signature verification");
+            }
+            long enVerify = System.currentTimeMillis();
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_VERIRY_FIELDS, (int)(enVerify-stVerify));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+        
         return result.isEmpty() ? 1 : 0;
     }
 
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
         try {
-            long st = System.currentTimeMillis();
+            long stSign = System.currentTimeMillis();
             values = sporeSignatures.signFields(values);
-            long en = System.currentTimeMillis();
-            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(en-st));
+            long enSign = System.currentTimeMillis();
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enSign-stSign));
             
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
             return  1;
         }
+        long stInsert;
+        long enInsert;
+        stInsert = System.currentTimeMillis();
         if (jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK")) {
             jedis.zadd(INDEX_KEY, hash(key), key);
+            enInsert = System.currentTimeMillis();
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enInsert-stInsert));
             return 0;
         }
+        enInsert = System.currentTimeMillis();
+        Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enInsert-stInsert));
         return 1;
     }
 
@@ -140,7 +169,23 @@ public class RedisSimpleSignatureClient extends DB {
 
     @Override
     public int update(String table, String key, HashMap<String, ByteIterator> values) {
-        return jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK") ? 0 : 1;
+        try {
+            long stSign = System.currentTimeMillis();
+            values = sporeSignatures.signFields(values);
+            long enSign = System.currentTimeMillis();
+            Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enSign-stSign));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return 1;
+        }
+
+
+        long stUpdate = System.currentTimeMillis();
+        int res = jedis.hmset(key, StringByteIterator.getStringMap(values)).equals("OK") ? 0 : 1;
+        long enUpdate = System.currentTimeMillis();
+        Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_UPDATE, (int)(enUpdate-stUpdate));
+        return res;
     }
 
     @Override

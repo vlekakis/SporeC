@@ -13,7 +13,6 @@ import org.junit.Assert;
 import org.umd.spore.cloud.SporeUtils;
 
 import java.io.File;
-import java.util.Map;
 import java.util.HashMap;
 
 public class SporeUtilsTest {
@@ -32,6 +31,7 @@ public class SporeUtilsTest {
             SporeUtils sp = new SporeUtils();
             sp.setPublicKeyPath(PUBLIC_PATH);
             sp.setPrivateKeyPath(PRIVATE_PATH);
+            sp.setKeyLen(1024);
             sp.loadKeys();
 
             
@@ -40,7 +40,7 @@ public class SporeUtilsTest {
             record.put("record", new StringByteIterator(val));
             
             record = sp.signFields(record);
-            boolean res = sp.verifySignatureOnFields(record, val.length());
+            boolean res = sp.verifySignatureOnFields(record);
             Assert.assertTrue(res);
             
         } catch (Exception e) {
@@ -57,6 +57,7 @@ public class SporeUtilsTest {
             SporeUtils sp = new SporeUtils();
             sp.setPublicKeyPath("testFiles/public2.key");
             sp.setPrivateKeyPath("testFiles/private2.key");
+            sp.setKeyLen(1024);
             sp.loadKeys();
             
             int numFields = 20;
@@ -66,7 +67,7 @@ public class SporeUtilsTest {
                 record.put(Integer.valueOf(i).toString(), new RandomByteIterator(sizeFields));
             }
             record = sp.signFields(record);
-            boolean res = sp.verifySignatureOnFields(record, sizeFields);
+            boolean res = sp.verifySignatureOnFields(record);
             Assert.assertTrue(res);
 
 
