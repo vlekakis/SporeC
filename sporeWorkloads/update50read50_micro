@@ -1,0 +1,30 @@
+
+# SporeC/RedisSS vs Redis
+
+#   Application example: Session store recording recent actions
+#
+#   Read/update ratio: 50/50
+#   Default data size: 1 KB records (10 fields, 100 bytes each, plus key)
+#   Request distribution: zipfian
+
+
+
+redis.host=127.0.0.1
+redis.port=6379
+redis.pubkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/testFiles/public22.key
+redis.privkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/testFiles/private22.key
+fieldlength=5
+fieldcount=100
+recordcount=100
+operationcount=20
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+readallfields=true
+
+readproportion=1
+updateproportion=0
+scanproportion=0
+insertproportion=0
+
+requestdistribution=zipfian
+

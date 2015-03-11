@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import com.yahoo.ycsb.measurements.Measurements;
+import com.yahoo.ycsb.workloads.CoreWorkload;
 import org.apache.commons.lang3.StringUtils;
 import org.umd.spore.cloud.SporeStrings;
 import org.umd.spore.cloud.SporeUtils;
@@ -27,6 +28,7 @@ public class RedisSimpleSignatureClient extends DB {
 
     private Jedis jedis;
     private SporeUtils sporeSignatures;
+    private int fieldLength;
     
     public static final String HOST_PROPERTY = "redis.host";
     public static final String PORT_PROPERTY = "redis.port";
@@ -69,7 +71,8 @@ public class RedisSimpleSignatureClient extends DB {
             privateKeyPath = SporeStrings.DEFAULT_PRIVATE_KEY_PATH;
         }
 
-
+        fieldLength = new Integer(props.getProperty(CoreWorkload.FIELD_LENGTH_PROPERTY));
+        System.out.println("field Length: "+fieldLength);
         sporeSignatures = new SporeUtils();
         sporeSignatures.setPublicKeyPath(publicKeyPath);
         sporeSignatures.setPrivateKeyPath(privateKeyPath);
@@ -119,13 +122,15 @@ public class RedisSimpleSignatureClient extends DB {
 
         try {
             long stVerify = System.currentTimeMillis();
-            boolean verifySign = sporeSignatures.verifySignatureOnFields(result);
+            boolean verifySign = sporeSignatures.verifySignatureOnFields(result,fieldLength);
             if (!verifySign) {
-                throw new RuntimeException("Signature verification");
+                System.out.println("Error during the verification on Read");
+                throw new RuntimeException("Signature verification Exception");
             }
             long enVerify = System.currentTimeMillis();
             Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_VERIRY_FIELDS, (int)(enVerify-stVerify));
         } catch (Exception e) {
+            System.out.println("Read Exception");
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
@@ -142,6 +147,7 @@ public class RedisSimpleSignatureClient extends DB {
             Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enSign-stSign));
             
         } catch (Exception e) {
+            System.out.println("Insert Exception");
             System.out.println(e.getMessage());
             e.printStackTrace();
             return  1;
@@ -170,11 +176,13 @@ public class RedisSimpleSignatureClient extends DB {
     @Override
     public int update(String table, String key, HashMap<String, ByteIterator> values) {
         try {
+            System.out.println("UPDATE");
             long stSign = System.currentTimeMillis();
             values = sporeSignatures.signFields(values);
             long enSign = System.currentTimeMillis();
             Measurements.getMeasurements().measure(SporeStrings.REDIS_SS_SIGN_FIELDS, (int)(enSign-stSign));
         } catch (Exception e) {
+            System.out.println("Update Exception");
             System.out.println(e.getMessage());
             e.printStackTrace();
             return 1;

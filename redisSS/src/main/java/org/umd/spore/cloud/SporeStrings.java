@@ -15,5 +15,6 @@ public final class SporeStrings {
     public static final String REDIS_SS_INSERT = "REDIS_SS_INSERT";
     public static final String REDIS_SS_SCAN = "REDIS_SS_SCAN";
     public static final String REDIS_SS_UPDATE = "REDIS_SS_UPDATE";
+
     
 }

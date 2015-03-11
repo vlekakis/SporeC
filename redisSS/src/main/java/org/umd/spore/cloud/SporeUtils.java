@@ -83,8 +83,8 @@ public class SporeUtils {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
             byte[] fieldBytes = valueIt.toArray();
-            byte[] fieldDigest = DigestUtils.md5(fieldBytes);
-            signObj.update(fieldDigest);
+            byte[] digest = DigestUtils.md5(fieldBytes);
+            signObj.update(digest);
             byte[] signature = signObj.sign();
             byte[] signedField = ArrayUtils.addAll(fieldBytes, signature);
             values.put(s,new ByteArrayByteIterator(signedField));
@@ -98,16 +98,16 @@ public class SporeUtils {
      * @return True if all the fields are verified
      * @throws Exception
      */
-    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result) throws  Exception {
+    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result, int fieldSize) throws  Exception {
 
         for (String s:result.keySet()) {
             ByteIterator value = result.get(s);
-            
             byte[] signedFieldBytes = value.toArray();
-            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, signedFieldBytes.length-signatureLength);
-            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldBytes.length, signedFieldBytes.length);
-            byte[] fieldDigest = DigestUtils.md5(fieldBytes);
-            verifyObj.update(fieldDigest);
+            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, fieldSize);
+            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldSize, signedFieldBytes.length);
+            byte[] digest = DigestUtils.md5(fieldBytes);
+
+            verifyObj.update(digest);
             result.put(s,new ByteArrayByteIterator(fieldBytes));
             if (BooleanUtils.isFalse(verifyObj.verify(signature))) {
                 return false;
