@@ -72,12 +72,14 @@ public class RedisSimpleSignatureClient extends DB {
         }
 
         fieldLength = new Integer(props.getProperty(CoreWorkload.FIELD_LENGTH_PROPERTY));
-        System.out.println("field Length: "+fieldLength);
+
         sporeSignatures = new SporeUtils();
         sporeSignatures.setPublicKeyPath(publicKeyPath);
         sporeSignatures.setPrivateKeyPath(privateKeyPath);
-        sporeSignatures.setKeyLen(1024);
+        sporeSignatures.setKeyLen(512);
+        sporeSignatures.setFieldLen(fieldLength);
         sporeSignatures.loadKeys();
+
     }
 
     public void cleanup() throws DBException {
@@ -122,7 +124,7 @@ public class RedisSimpleSignatureClient extends DB {
 
         try {
             long stVerify = System.currentTimeMillis();
-            boolean verifySign = sporeSignatures.verifySignatureOnFields(result,fieldLength);
+            boolean verifySign = sporeSignatures.verifySignatureOnFields(result);
             if (!verifySign) {
                 System.out.println("Error during the verification on Read");
                 throw new RuntimeException("Signature verification Exception");
@@ -176,7 +178,6 @@ public class RedisSimpleSignatureClient extends DB {
     @Override
     public int update(String table, String key, HashMap<String, ByteIterator> values) {
         try {
-            System.out.println("UPDATE");
             long stSign = System.currentTimeMillis();
             values = sporeSignatures.signFields(values);
             long enSign = System.currentTimeMillis();

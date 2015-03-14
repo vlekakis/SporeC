@@ -17,29 +17,32 @@ import java.util.HashMap;
 
 public class SporeUtilsTest {
 
-    private static final String PRIVATE_PATH = "testFiles/private22.key";
-    private static final String PUBLIC_PATH = "testFiles/public22.key";
+    private static final String PRIVATE_PATH = "/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/private512.key";
+    private static final String PUBLIC_PATH = "/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/public512.key";
+
 
     @Test
     public void testSignVerifyRecordSingleField() {
         System.out.println("testing.....testSignVerifyRecordSingleField");
         try {
 
+
             SporeUtils sp = new SporeUtils();
             sp.setPublicKeyPath(PUBLIC_PATH);
             sp.setPrivateKeyPath(PRIVATE_PATH);
-            sp.setKeyLen(1024);
+            sp.setKeyLen(512);
+            sp.setFieldLen(50);
             sp.loadKeys();
 
 
             HashMap<String, ByteIterator> record = new HashMap<String, ByteIterator>(1);
-            String val = "value";
-            record.put("record", new StringByteIterator(val));
+            for (int i=0; i<10000; i++) {
+                record.put("record", new RandomByteIterator(50));
 
-            record = sp.signFields(record);
-            boolean res = sp.verifySignatureOnFields(record, val.length());
-            System.out.println("result:"+res);
-            Assert.assertTrue(res);
+                record = sp.signFields(record);
+                boolean res = sp.verifySignatureOnFields(record);
+                Assert.assertTrue(res);
+            }
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

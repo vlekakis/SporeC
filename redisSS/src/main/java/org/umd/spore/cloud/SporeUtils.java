@@ -12,15 +12,9 @@ import org.apache.commons.lang3.ArrayUtils;
 import lombok.Data;
 
 import java.io.*;
-import java.security.Signature;
+import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.SecureRandom;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.HashMap;
 
 
@@ -45,9 +39,12 @@ public class SporeUtils {
     private Signature signObj;
     private Signature verifyObj;
 
+    private int fieldLen;
     private int keyLen;
     private int signatureLength;
-    
+    private byte[] data;
+
+
     /**
      * Function to either load the keys from disk or to generate them.
      * The function generates them if while trying to find the keys get
@@ -55,7 +52,9 @@ public class SporeUtils {
      */
     public void loadKeys() {
         //Signature length the number of octets in the key
+
         signatureLength = keyLen / 8;
+        data = new byte[2*(signatureLength+fieldLen)];
         try {
             readKeys();
         } catch (Exception e) {
@@ -83,11 +82,16 @@ public class SporeUtils {
         for (String s:values.keySet()) {
             ByteIterator valueIt = values.get(s);
             byte[] fieldBytes = valueIt.toArray();
-            byte[] digest = DigestUtils.md5(fieldBytes);
-            signObj.update(digest);
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(fieldBytes);
+            signObj.update(md5.digest());
+
             byte[] signature = signObj.sign();
-            byte[] signedField = ArrayUtils.addAll(fieldBytes, signature);
-            values.put(s,new ByteArrayByteIterator(signedField));
+
+            System.arraycopy(fieldBytes,0,data,0,fieldLen);
+            System.arraycopy(signature,0,data,fieldLen,signatureLength);
+
+            values.put(s,new ByteArrayByteIterator(data));
         }
         return values;
     }
@@ -98,18 +102,18 @@ public class SporeUtils {
      * @return True if all the fields are verified
      * @throws Exception
      */
-    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result, int fieldSize) throws  Exception {
+    public boolean verifySignatureOnFields(HashMap<String, ByteIterator> result) throws  Exception {
 
         for (String s:result.keySet()) {
             ByteIterator value = result.get(s);
             byte[] signedFieldBytes = value.toArray();
-            byte[] fieldBytes = ArrayUtils.subarray(signedFieldBytes, 0, fieldSize);
-            byte[] signature = ArrayUtils.subarray(signedFieldBytes, fieldSize, signedFieldBytes.length);
-            byte[] digest = DigestUtils.md5(fieldBytes);
 
+
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(signedFieldBytes,0,fieldLen);
+            byte[] digest = md5.digest();
             verifyObj.update(digest);
-            result.put(s,new ByteArrayByteIterator(fieldBytes));
-            if (BooleanUtils.isFalse(verifyObj.verify(signature))) {
+            if (!verifyObj.verify(signedFieldBytes,fieldLen,signatureLength)) {
                 return false;
             }
         }
@@ -132,9 +136,17 @@ public class SporeUtils {
             e.printStackTrace();
         }
     }
-    
-    public void printByteArrayHex(String message, byte[] data) {
-        System.out.println(message+"(size:"+data.length+") "+ Base64.encodeBase64String(data));
+
+    private void printInputArrays(byte[] whole, byte[] field, byte[] digest, byte[]sign) {
+        printByteArrayHex("whole: ", whole);
+        printByteArrayHex("field: ", field);
+        printByteArrayHex("digest: ", digest);
+        printByteArrayHex("sign: ", sign);
+        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    }
+
+    private void printByteArrayHex(String message, byte[] data) {
+        System.out.println(message+"(size:"+data.length+") "+ DigestUtils.md5Hex(data));
     }
     
     
