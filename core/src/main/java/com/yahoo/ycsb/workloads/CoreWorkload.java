@@ -32,6 +32,7 @@ import com.yahoo.ycsb.generator.SkewedLatestGenerator;
 import com.yahoo.ycsb.generator.UniformIntegerGenerator;
 import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
+import org.umd.spore.cloud.SporeUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -458,11 +459,12 @@ public class CoreWorkload extends Workload
 		int keynum=keysequence.nextInt();
 		String dbkey = buildKeyName(keynum);
 		HashMap<String, ByteIterator> values = buildValues();
-		if (db.insert(table,dbkey,values) == 0)
+		if (db.insert(table, dbkey, values) == 0)
 			return true;
 		else
 			return false;
 	}
+
 
 	/**
 	 * Do one transaction operation. Because it will be called concurrently from multiple client threads, this 
@@ -486,10 +488,9 @@ public class CoreWorkload extends Workload
 		{
 			doTransactionInsert(db);
 		}
-		else if (op.compareTo("SCAN")==0)
-		{
-			doTransactionScan(db);
-		}
+		else if (op.compareTo("SCAN")==0) {
+            doTransactionScan(db);
+        }
 		else
 		{
 			doTransactionReadModifyWrite(db);
@@ -534,7 +535,7 @@ public class CoreWorkload extends Workload
 			fields.add(fieldname);
 		}
 
-		db.read(table,keyname,fields,new HashMap<String,ByteIterator>());
+		db.read(table, keyname, fields, new HashMap<String, ByteIterator>());
 	}
 	
 	public void doTransactionReadModifyWrite(DB db)
@@ -578,7 +579,7 @@ public class CoreWorkload extends Workload
 
 		long en=System.nanoTime();
 		
-		Measurements.getMeasurements().measure("READ-MODIFY-WRITE", (int)((en-st)/1000));
+		Measurements.getMeasurements().measure("READ-MODIFY-WRITE", (int) ((en - st) / 1000));
 	}
 	
 	public void doTransactionScan(DB db)
@@ -602,7 +603,7 @@ public class CoreWorkload extends Workload
 			fields.add(fieldname);
 		}
 
-		db.scan(table,startkeyname,len,fields,new Vector<HashMap<String,ByteIterator>>());
+		db.scan(table, startkeyname, len, fields, new Vector<HashMap<String, ByteIterator>>());
 	}
 
 	public void doTransactionUpdate(DB db)
@@ -625,7 +626,7 @@ public class CoreWorkload extends Workload
 		   values = buildUpdate();
 		}
 
-		db.update(table,keyname,values);
+		db.update(table, keyname, values);
 	}
 
 	public void doTransactionInsert(DB db)
@@ -636,6 +637,100 @@ public class CoreWorkload extends Workload
 		String dbkey = buildKeyName(keynum);
 
 		HashMap<String, ByteIterator> values = buildValues();
-		db.insert(table,dbkey,values);
+		db.insert(table, dbkey, values);
 	}
+
+	/*
+	 * Spore related operations
+	 */
+	public boolean doInsertSS(DB db, Object threadstate, SporeUtils sporeObj) throws Exception {
+
+		int keynum=keysequence.nextInt();
+		String dbkey = buildKeyName(keynum);
+		HashMap<String, ByteIterator> values = buildValues();
+		if (db.insertSS(table, dbkey, values, sporeObj) == 0)
+			return true;
+		else
+			return false;
+	}
+
+	public boolean doTransactionSS(DB db, Object threadstate, SporeUtils sporeObj) throws  Exception {
+
+		String op=operationchooser.nextString();
+		if (op.compareTo("UPDATE") == 0) {
+			doTransactionUpdateSS(db, sporeObj);
+		} else if (op.compareTo("INSERT") == 0) {
+			doTransactionInsertSS(db, sporeObj);
+		} else if (op.compareTo("READ") == 0) {
+			doTransactionReadSS(db, sporeObj);
+		} else if (op.compareTo("SCAN") == 0) {
+			doTransactionScanSS(db, sporeObj);
+		}
+
+		return true;
+	}
+
+	public void doTransactionUpdateSS(DB db, SporeUtils sporeObj) throws Exception {
+
+		int keynum = nextKeynum();
+		String keyname=buildKeyName(keynum);
+		HashMap<String,ByteIterator> values;
+		if (writeallfields) {
+			//new data for all the fields
+			values = buildValues();
+		} else {
+			//update a random field
+			values = buildUpdate();
+		}
+		db.updateSS(table, keyname, values, sporeObj);
+	}
+
+	public void doTransactionInsertSS(DB db, SporeUtils sporeObj) throws  Exception {
+		//choose the next key
+		int keynum=transactioninsertkeysequence.nextInt();
+		String dbkey = buildKeyName(keynum);
+		HashMap<String, ByteIterator> values = buildValues();
+
+		db.insertSS(table, dbkey, values, sporeObj);
+	}
+
+	public void doTransactionReadSS(DB db, SporeUtils sporeObj) throws Exception {
+
+		//choose a random key
+		int keynum = nextKeynum();
+		String keyname = buildKeyName(keynum);
+		HashSet<String> fields=null;
+
+		if (!readallfields) {
+			//read a random field
+			String fieldname="field"+fieldchooser.nextString();
+			fields=new HashSet<String>();
+			fields.add(fieldname);
+		}
+		db.readSS(table, keyname, fields, new HashMap<String, ByteIterator>(), sporeObj);
+	}
+
+	public void doTransactionScanSS(DB db, SporeUtils sporeObj) throws Exception {
+
+		//choose a random key
+		int keynum = nextKeynum();
+		String startkeyname = buildKeyName(keynum);
+		//choose a random scan length
+		int len=scanlength.nextInt();
+
+		HashSet<String> fields=null;
+		if (!readallfields) {
+			//read a random field
+			String fieldname="field"+fieldchooser.nextString();
+
+			fields=new HashSet<String>();
+			fields.add(fieldname);
+		}
+
+		db.scanSS(table, startkeyname, len, fields, new Vector<HashMap<String, ByteIterator>>(), sporeObj);
+	}
+
+
+
+
 }

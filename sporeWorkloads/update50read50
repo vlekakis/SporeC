@@ -15,7 +15,7 @@ redis.pubkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/public512.key
 redis.privkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/private512.key
 
 
-recordcount=10000
+recordcount=100000
 operationcount=500000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 readallfields=true

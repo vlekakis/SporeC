@@ -17,6 +17,8 @@
 
 package com.yahoo.ycsb;
 
+import org.umd.spore.cloud.SporeUtils;
+
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -126,7 +128,7 @@ public abstract class DB
 	 */
 	public abstract int insert(String table, String key, HashMap<String,ByteIterator> values);
 
-	/**
+    /**
 	 * Delete a record from the database. 
 	 *
 	 * @param table The name of the table
@@ -134,4 +136,41 @@ public abstract class DB
 	 * @return Zero on success, a non-zero error code on error.  See this class's description for a discussion of error codes.
 	 */
 	public abstract int delete(String table, String key);
+
+
+    /*
+     *
+     *
+     *
+     * SPORE: This insert is for the simple signature
+     *
+     *
+     *
+     *
+     */
+    public abstract int insertSS(String table,
+								 String key,
+								 HashMap<String,
+								 ByteIterator> values,
+								 SporeUtils sporeObj) throws Exception;
+
+	public abstract int updateSS(String table,
+								 String key,
+								 HashMap<String, ByteIterator> values,
+								 SporeUtils sporeObj) throws Exception;
+
+	public abstract int readSS(String table,
+							   String key,
+							   Set<String> fields,
+							   HashMap<String,ByteIterator> result,
+							   SporeUtils sporeObj) throws Exception;
+
+
+	public abstract int scanSS(String table,
+							   String startkey,
+							   int recordcount,
+							   Set<String> fields,
+							   Vector<HashMap<String,ByteIterator>> result,
+							   SporeUtils sporeObj) throws Exception;
+
 }

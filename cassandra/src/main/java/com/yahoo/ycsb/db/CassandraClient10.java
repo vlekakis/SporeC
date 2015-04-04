@@ -503,7 +503,7 @@ public class CassandraClient10 extends DB
     return Error;
   }
 
-  /**
+    /**
    * Delete a record from the database.
    *
    * @param table

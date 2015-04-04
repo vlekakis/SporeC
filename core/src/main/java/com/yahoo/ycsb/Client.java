@@ -33,6 +33,13 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
 
+import com.yahoo.ycsb.workloads.CoreWorkload;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.umd.spore.cloud.SporeStrings;
+import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.SporeValues;
+
 //import org.apache.log4j.BasicConfigurator;
 
 /**
@@ -157,6 +164,15 @@ class ClientThread extends Thread
 	Object _workloadstate;
 	Properties _props;
 
+    /*
+        SPORE related class variables
+     */
+    @Setter
+    String _loadType;
+    @Setter
+    SporeUtils _sporeObj;
+	@Setter
+	String _runType;
 
 	/**
 	 * Constructor.
@@ -169,8 +185,20 @@ class ClientThread extends Thread
 	 * @param props the properties defining the experiment
 	 * @param opcount the number of operations (transactions or inserts) to do
 	 * @param targetperthreadperms target number of operations per thread per ms
+	 * //Spore
+	 * @param  loadType Distinguish between types of loading: Default, Simple Signature(SS)
+	 * @param runType Distringuish between types of running: Default, Simple Signature(SS)
 	 */
-	public ClientThread(DB db, boolean dotransactions, Workload workload, int threadid, int threadcount, Properties props, int opcount, double targetperthreadperms)
+	public ClientThread(DB db,
+                        boolean dotransactions,
+                        Workload workload,
+                        int threadid,
+                        int threadcount,
+                        Properties props,
+                        int opcount,
+                        double targetperthreadperms,
+						String loadType,
+						String runType)
 	{
 		//TODO: consider removing threadcount and threadid
 		_db=db;
@@ -182,7 +210,30 @@ class ClientThread extends Thread
 		_threadid=threadid;
 		_threadcount=threadcount;
 		_props=props;
+		_loadType = loadType;
+		_runType = runType;
+
 		//System.out.println("Interval = "+interval);
+	}
+
+	private void initSporeObject() {
+		String publicKeyPath = _props.getProperty(SporeStrings.PUBLIC_KEY_PATH);
+		String privateKeyPath = _props.getProperty(SporeStrings.PRIVATE_KEY_PATH);
+		if (StringUtils.isBlank(publicKeyPath)) {
+			publicKeyPath = SporeStrings.DEFAULT_PUBLIC_KEY_PATH;
+		}
+		if (StringUtils.isBlank(privateKeyPath)) {
+			privateKeyPath = SporeStrings.DEFAULT_PRIVATE_KEY_PATH;
+		}
+
+		int fieldLength =
+				new Integer(_props.getProperty(CoreWorkload.FIELD_LENGTH_PROPERTY));
+		_sporeObj = new SporeUtils();
+		_sporeObj.setFieldLen(fieldLength);
+		_sporeObj.setKeyLen(SporeValues.KEY_LENGTH);
+		_sporeObj.setPublicKeyPath(publicKeyPath);
+		_sporeObj.setPrivateKeyPath(privateKeyPath);
+		_sporeObj.loadKeys();
 	}
 
 	public int getOpsDone()
@@ -233,13 +284,21 @@ class ClientThread extends Thread
 		{
 			if (_dotransactions)
 			{
-				long st=System.currentTimeMillis();
+				boolean runSimpleSignature = (_runType.equals("runSS"))? true:false;
+				boolean runDefault = (_runType.equals("run"))? true:false;
+				if (runSimpleSignature) {
+					initSporeObject();
+				}
 
+				long st=System.currentTimeMillis();
 				while (((_opcount == 0) || (_opsdone < _opcount)) && !_workload.isStopRequested())
 				{
 
-					if (!_workload.doTransaction(_db,_workloadstate))
-					{
+					if (runDefault &&
+							!_workload.doTransaction(_db,_workloadstate)) {
+						break;
+					} else if (runSimpleSignature &&
+							!_workload.doTransactionSS(_db,_workloadstate,_sporeObj)) {
 						break;
 					}
 
@@ -269,14 +328,26 @@ class ClientThread extends Thread
 			}
 			else
 			{
+                boolean loadSimpleSignature = (_loadType.equals("loadSS"))? true:false;
+                boolean loadDefault = (_loadType.equals("load"))? true:false;
+				if (loadSimpleSignature) {
+					initSporeObject();
+				}
+
 				long st=System.currentTimeMillis();
-
-				while (((_opcount == 0) || (_opsdone < _opcount)) && !_workload.isStopRequested())
+                while (((_opcount == 0) || (_opsdone < _opcount)) && !_workload.isStopRequested())
 				{
+					try {
+						if (loadDefault &&
+								!_workload.doInsert(_db, _workloadstate)) {
+							break;
 
-					if (!_workload.doInsert(_db,_workloadstate))
-					{
-						break;
+						} else if (loadSimpleSignature &&
+								!_workload.doInsertSS(_db, _workloadstate, _sporeObj)) {
+							break;
+						}
+					} catch (Exception e) {
+						System.err.println("Exception inserting data");
 					}
 
 					_opsdone++;
@@ -447,12 +518,15 @@ public class Client
 		int target=0;
 		boolean status=false;
 		String label="";
+        String loadType="";
+		String runType="";
 
 		//parse arguments
 		int argindex=0;
 
 		if (args.length==0)
 		{
+            System.out.printf("473");
 			usageMessage();
 			System.exit(0);
 		}
@@ -464,7 +538,8 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-					usageMessage();
+                    System.out.printf("484");
+                    usageMessage();
 					System.exit(0);
 				}
 				int tcount=Integer.parseInt(args[argindex]);
@@ -476,6 +551,7 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
+                    System.out.printf("497");
 					usageMessage();
 					System.exit(0);
 				}
@@ -483,14 +559,27 @@ public class Client
 				props.setProperty("target", ttarget+"");
 				argindex++;
 			}
+            else if (args[argindex].compareTo("-loadSS") == 0) {
+                //SPORE change to load data for the Redis Simple signature client
+                loadType = "loadSS";
+                dotransactions = false;
+                argindex++;
+            }
 			else if (args[argindex].compareTo("-load")==0)
 			{
+                loadType = "load";
 				dotransactions=false;
 				argindex++;
 			}
 			else if (args[argindex].compareTo("-t")==0)
 			{
+				runType = "run";
 				dotransactions=true;
+				argindex++;
+			}
+			else if (args[argindex].compareTo("-runSS") == 0) {
+				runType = "runSS";
+				dotransactions = true;
 				argindex++;
 			}
 			else if (args[argindex].compareTo("-s")==0)
@@ -503,6 +592,7 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
+                    System.out.printf("533");
 					usageMessage();
 					System.exit(0);
 				}
@@ -514,6 +604,7 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
+                    System.out.printf("544");
 					usageMessage();
 					System.exit(0);
 				}
@@ -525,6 +616,7 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
+                    System.out.printf("556");
 					usageMessage();
 					System.exit(0);
 				}
@@ -556,12 +648,14 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
+                    System.out.printf("588");
 					usageMessage();
 					System.exit(0);
 				}
 				int eq=args[argindex].indexOf('=');
 				if (eq<0)
 				{
+                    System.out.printf("596");
 					usageMessage();
 					System.exit(0);
 				}
@@ -587,6 +681,7 @@ public class Client
 
 		if (argindex!=args.length)
 		{
+            System.out.printf("621");
 			usageMessage();
 			System.exit(0);
 		}
@@ -701,13 +796,16 @@ public class Client
 		}
 		else
 		{
-			if (props.containsKey(INSERT_COUNT_PROPERTY))
+
+            if (props.containsKey(INSERT_COUNT_PROPERTY))
 			{
+                System.out.println("INSERT_COUNT_PROPERTY");
 				opcount=Integer.parseInt(props.getProperty(INSERT_COUNT_PROPERTY,"0"));
 			}
 			else
 			{
-				opcount=Integer.parseInt(props.getProperty(RECORD_COUNT_PROPERTY,"0"));
+                System.out.printf("RECORD_COUNT_PROPERTY");
+                opcount=Integer.parseInt(props.getProperty(RECORD_COUNT_PROPERTY,"0"));
 			}
 		}
 
@@ -726,7 +824,15 @@ public class Client
 				System.exit(0);
 			}
 
-			Thread t=new ClientThread(db,dotransactions,workload,threadid,threadcount,props,opcount/threadcount,targetperthreadperms);
+			Thread t=new ClientThread(db,
+					dotransactions,
+					workload,
+					threadid,
+					threadcount,
+					props,
+					opcount/threadcount,
+					targetperthreadperms,
+					loadType,runType);
 
 			threads.add(t);
 			//t.start();

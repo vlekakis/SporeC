@@ -17,6 +17,9 @@
 
 package com.yahoo.ycsb;
 
+import org.umd.spore.cloud.SporeStrings;
+import org.umd.spore.cloud.SporeUtils;
+
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -101,7 +104,7 @@ public class BasicDB extends DB
 
 		if (verbose)
 		{
-			System.out.print("READ "+table+" "+key+" [ ");
+			System.out.print("READ " + table + " " + key + " [ ");
 			if (fields!=null)
 			{
 				for (String f : fields)
@@ -211,6 +214,45 @@ public class BasicDB extends DB
 			System.out.println("]");
 		}
 
+		return 0;
+	}
+
+    /**
+     * Insert a record in the database. Any field/value pairs in the specified values HashMap will be written into the record with the specified
+     * record key.
+     * //SPORE Insert Simple Signature Debug
+     * @param table The name of the table
+     * @param key The record key of the record to insert.
+     * @param values A HashMap of field/value pairs to insert in the record
+     * @return Zero on success, a non-zero error code on error
+     */
+    public int insertSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+			throws Exception {
+
+		insert(table, key, values);
+        return 0;
+    }
+
+
+	public int updateSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+			throws  Exception {
+
+		update(table, key, values);
+		return 0;
+	}
+
+
+	@Override
+	public int readSS(String table, String key, Set<String> fields, HashMap<String,ByteIterator> result, SporeUtils sporeObj)
+			throws Exception {
+		read(table, key, fields, result);
+		return 0;
+	}
+
+	@Override
+	public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, SporeUtils sporeObj)
+			throws Exception {
+		scan( table, startkey, recordcount, fields, result);
 		return 0;
 	}
 

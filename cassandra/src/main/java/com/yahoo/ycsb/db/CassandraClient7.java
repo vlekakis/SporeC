@@ -469,7 +469,7 @@ public class CassandraClient7 extends DB
     return Error;
   }
 
-  /**
+    /**
    * Delete a record from the database.
    * 
    * @param table

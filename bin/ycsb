@@ -21,6 +21,17 @@ COMMANDS = {
         "description" : "Execute the transaction phase",
         "main"        : "com.yahoo.ycsb.Client",
     },
+    "loadSS" : {
+            "command"     : "-loadSS",
+            "description" : "Execute the load phase",
+            "main"        : "com.yahoo.ycsb.Client",
+     },
+     "runSS" : {
+                 "command"     : "-runSS",
+                 "description" : "Execute the load phase",
+                 "main"        : "com.yahoo.ycsb.Client",
+          },
+
 }
 
 DATABASES = {

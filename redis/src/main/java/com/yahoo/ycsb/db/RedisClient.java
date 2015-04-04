@@ -6,10 +6,7 @@
  */
 
 package com.yahoo.ycsb.db;
-import com.yahoo.ycsb.DB;
-import com.yahoo.ycsb.DBException;
-import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.StringByteIterator;
+import com.yahoo.ycsb.*;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -19,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import org.umd.spore.cloud.SporeUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 
@@ -39,8 +37,7 @@ public class RedisClient extends DB {
         String portString = props.getProperty(PORT_PROPERTY);
         if (portString != null) {
             port = Integer.parseInt(portString);
-        }
-        else {
+        } else {
             port = Protocol.DEFAULT_PORT;
         }
         String host = props.getProperty(HOST_PROPERTY);
@@ -71,12 +68,11 @@ public class RedisClient extends DB {
 
     @Override
     public int read(String table, String key, Set<String> fields,
-            HashMap<String, ByteIterator> result) {
+                    HashMap<String, ByteIterator> result) {
         if (fields == null) {
             StringByteIterator.putAllAsByteIterators(result, jedis.hgetAll(key));
-        }
-        else {
-            String[] fieldArray = (String[])fields.toArray(new String[fields.size()]);
+        } else {
+            String[] fieldArray = (String[]) fields.toArray(new String[fields.size()]);
             List<String> values = jedis.hmget(key, fieldArray);
 
             Iterator<String> fieldIterator = fields.iterator();
@@ -84,7 +80,7 @@ public class RedisClient extends DB {
 
             while (fieldIterator.hasNext() && valueIterator.hasNext()) {
                 result.put(fieldIterator.next(),
-			   new StringByteIterator(valueIterator.next()));
+                        new StringByteIterator(valueIterator.next()));
             }
             assert !fieldIterator.hasNext() && !valueIterator.hasNext();
         }
@@ -103,8 +99,8 @@ public class RedisClient extends DB {
     @Override
     public int delete(String table, String key) {
         return jedis.del(key) == 0
-            && jedis.zrem(INDEX_KEY, key) == 0
-               ? 1 : 0;
+                && jedis.zrem(INDEX_KEY, key) == 0
+                ? 1 : 0;
     }
 
     @Override
@@ -114,9 +110,9 @@ public class RedisClient extends DB {
 
     @Override
     public int scan(String table, String startkey, int recordcount,
-            Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
+                    Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
         Set<String> keys = jedis.zrangeByScore(INDEX_KEY, hash(startkey),
-                                Double.POSITIVE_INFINITY, 0, recordcount);
+                Double.POSITIVE_INFINITY, 0, recordcount);
 
         HashMap<String, ByteIterator> values;
         for (String key : keys) {
@@ -128,4 +124,29 @@ public class RedisClient extends DB {
         return 0;
     }
 
+
+    /**
+     * SPORE Related functions
+     * These are just stubs that we do not use but we need to have
+     */
+    @Override
+    public int insertSS(String table, String key, HashMap<String, ByteIterator> values, SporeUtils sporeObj) throws Exception {
+        return 0;
+    }
+
+    @Override
+    public int updateSS(String table, String key, HashMap<String, ByteIterator> values, SporeUtils sporeObj) throws Exception {
+        return 0;
+    }
+
+    @Override
+    public int readSS(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result, SporeUtils sporeObj) throws Exception {
+        return 0;
+    }
+
+    @Override
+    public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, SporeUtils sporeObj) throws Exception {
+        return 0;
+    }
 }
+

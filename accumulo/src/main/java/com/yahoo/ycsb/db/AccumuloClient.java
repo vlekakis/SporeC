@@ -296,11 +296,6 @@ public class AccumuloClient extends DB {
 	}
 
 	@Override
-	public int insert(String table, String key, HashMap<String, ByteIterator> values) {
-		return update(table, key, values);
-	}
-
-	@Override
 	public int delete(String table, String key) {
 		try {
 			checkTable(table);

@@ -11,19 +11,19 @@
 
 redis.host=127.0.0.1
 redis.port=6379
-redis.pubkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/public512a.key
-redis.privkey=/Users/lex/Work/IdeaProjects/YCSB/redisSS/keys/private512a.key
+redis.pubkey=/Users/lex/Work/IdeaProjects/YCSB/core/keys/public512a.key
+redis.privkey=/Users/lex/Work/IdeaProjects/YCSB/core/keys/private512a.key
 
-recordcount=100
-operationcount=200
+recordcount=500
+operationcount=20000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 readallfields=true
 
-readproportion=1
-updateproportion=0
+readproportion=0.50
+updateproportion=0.25
 scanproportion=0
-insertproportion=0
+insertproportion=0.25
 
 requestdistribution=zipfian
 

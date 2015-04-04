@@ -391,11 +391,14 @@ public class CassandraClient8 extends DB
     return insert(table, key, values);
   }
 
+    @Override
+
+
   /**
    * Insert a record in the database. Any field/value pairs in the specified
    * values HashMap will be written into the record with the specified record
    * key.
-   * 
+   *
    * @param table
    *          The name of the table
    * @param key
@@ -407,28 +410,28 @@ public class CassandraClient8 extends DB
   public int insert(String table, String key, HashMap<String, ByteIterator> values)
   {
     if (!_table.equals(table)) {
-      try 
+      try
       {
         client.set_keyspace(table);
         _table = table;
       }
-      catch (Exception e) 
+      catch (Exception e)
       {
         e.printStackTrace();
         e.printStackTrace(System.out);
         return Error;
       }
     }
-    
+
     for (int i = 0; i < OperationRetries; i++)
     {
       if (_debug)
       {
         System.out.println("Inserting key: " + key);
       }
-      
+
       try
-      { 
+      {
         ByteBuffer wrappedKey = ByteBuffer.wrap(key.getBytes("UTF-8"));
 
         Column col;
@@ -442,15 +445,15 @@ public class CassandraClient8 extends DB
 
           column = new ColumnOrSuperColumn();
           column.setColumn(col);
-                                        
+
           mutations.add(new Mutation().setColumn_or_supercolumn(column));
         }
-        
+
         mutationMap.put(column_family, mutations);
         record.put(wrappedKey, mutationMap);
 
         client.batch_mutate(record, ConsistencyLevel.ONE);
-        
+
         mutations.clear();
         mutationMap.clear();
         record.clear();
@@ -473,7 +476,7 @@ public class CassandraClient8 extends DB
     return Error;
   }
 
-  /**
+    /**
    * Delete a record from the database.
    * 
    * @param table
