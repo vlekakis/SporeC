@@ -36,9 +36,9 @@ import java.util.Vector;
 import com.yahoo.ycsb.workloads.CoreWorkload;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import org.umd.spore.cloud.SporeStrings;
-import org.umd.spore.cloud.SporeUtils;
-import org.umd.spore.cloud.SporeValues;
+import org.umd.spore.cloud.utility.SporeStrings;
+import org.umd.spore.cloud.utility.Signer;
+import org.umd.spore.cloud.utility.SporeValues;
 
 //import org.apache.log4j.BasicConfigurator;
 
@@ -170,7 +170,7 @@ class ClientThread extends Thread
     @Setter
     String _loadType;
     @Setter
-    SporeUtils _sporeObj;
+	Signer _sporeObj;
 	@Setter
 	String _runType;
 
@@ -228,7 +228,7 @@ class ClientThread extends Thread
 
 		int fieldLength =
 				new Integer(_props.getProperty(CoreWorkload.FIELD_LENGTH_PROPERTY));
-		_sporeObj = new SporeUtils();
+		_sporeObj = new Signer();
 		_sporeObj.setFieldLen(fieldLength);
 		_sporeObj.setKeyLen(SporeValues.KEY_LENGTH);
 		_sporeObj.setPublicKeyPath(publicKeyPath);
@@ -551,10 +551,10 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-                    System.out.printf("497");
 					usageMessage();
 					System.exit(0);
 				}
+
 				int ttarget=Integer.parseInt(args[argindex]);
 				props.setProperty("target", ttarget+"");
 				argindex++;
@@ -592,7 +592,6 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-                    System.out.printf("533");
 					usageMessage();
 					System.exit(0);
 				}
@@ -604,7 +603,6 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-                    System.out.printf("544");
 					usageMessage();
 					System.exit(0);
 				}
@@ -616,7 +614,6 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-                    System.out.printf("556");
 					usageMessage();
 					System.exit(0);
 				}
@@ -648,14 +645,12 @@ public class Client
 				argindex++;
 				if (argindex>=args.length)
 				{
-                    System.out.printf("588");
 					usageMessage();
 					System.exit(0);
 				}
 				int eq=args[argindex].indexOf('=');
 				if (eq<0)
 				{
-                    System.out.printf("596");
 					usageMessage();
 					System.exit(0);
 				}
@@ -681,7 +676,6 @@ public class Client
 
 		if (argindex!=args.length)
 		{
-            System.out.printf("621");
 			usageMessage();
 			System.exit(0);
 		}
@@ -710,16 +704,19 @@ public class Client
 
 		//get number of threads, target and db
 		threadcount=Integer.parseInt(props.getProperty("threadcount","1"));
-		dbname=props.getProperty("db","com.yahoo.ycsb.BasicDB");
-		target=Integer.parseInt(props.getProperty("target","0"));
+		dbname=props.getProperty("db", "com.yahoo.ycsb.BasicDB");
+		target=Integer.parseInt(props.getProperty("target", "0"));
+
 		
 		//compute the target throughput
-		double targetperthreadperms=-1;
+		double targetPerThreadPerMs=-1;
 		if (target>0)
 		{
-			double targetperthread=((double)target)/((double)threadcount);
-			targetperthreadperms=targetperthread/1000.0;
-		}	 
+			double targetPerThread=((double)target)/((double)threadcount);
+			targetPerThreadPerMs=targetPerThread/1000.0;
+		}
+
+
 
 		System.out.println("YCSB Client 0.1");
 		System.out.print("Command line:");
@@ -831,7 +828,7 @@ public class Client
 					threadcount,
 					props,
 					opcount/threadcount,
-					targetperthreadperms,
+					targetPerThreadPerMs,
 					loadType,runType);
 
 			threads.add(t);

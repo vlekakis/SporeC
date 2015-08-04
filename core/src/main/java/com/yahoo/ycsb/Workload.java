@@ -17,7 +17,7 @@
 
     package com.yahoo.ycsb;
 
-    import org.umd.spore.cloud.SporeUtils;
+    import org.umd.spore.cloud.utility.Signer;
 
     import java.util.Properties;
     import java.util.concurrent.atomic.AtomicBoolean;
@@ -114,8 +114,8 @@
         else return false;
       }
 
-    public abstract boolean doInsertSS(DB db, Object threadstate, SporeUtils sporeObj) throws Exception;
-    public abstract boolean doTransactionSS(DB db, Object threadstate, SporeUtils sporeObj) throws Exception;
+    public abstract boolean doInsertSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
+    public abstract boolean doTransactionSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
 
     }
 

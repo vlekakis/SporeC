@@ -20,9 +20,8 @@ package com.yahoo.ycsb;
 import java.util.*;
 
 import com.yahoo.ycsb.measurements.Measurements;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.umd.spore.cloud.SporeStrings;
-import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.utility.SporeStrings;
+import org.umd.spore.cloud.utility.Signer;
 
 /**
  * Wrapper around a "real" DB that measures latencies and counts return codes.
@@ -89,11 +88,6 @@ public class DBWrapper extends DB
 		long st=System.nanoTime();
 		int res=_db.read(table, key, fields, result);
 		long en=System.nanoTime();
-		Iterator<ByteIterator> it = result.values().iterator();
-		System.err.println("Length results: "+result.size());
-		while (it.hasNext()) {
-			System.err.println(DigestUtils.md5Hex(it.next().toString()));
-		}
 		_measurements.measure("READ", (int) ((en - st) / 1000));
 		_measurements.reportReturnCode("READ", res);
 		return res;
@@ -184,11 +178,12 @@ public class DBWrapper extends DB
 	 * @param sporeObj Spore object
      * @return Zero on success, a non-zero error code on error
      */
-    public int insertSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+    public int insertSS(String table, String key, HashMap<String,ByteIterator> values, Signer sporeObj)
 			throws Exception {
 
 		long st=System.nanoTime();
-		values = sporeObj.signFields(values);
+		//values = sporeObj.signFields(values);
+		values = sporeObj.signRecord(values);
 		long en=System.nanoTime();
 		measurementUtil(st, en, SporeStrings.SS_SIGN_ON_INSET, 0);
 
@@ -210,7 +205,7 @@ public class DBWrapper extends DB
 	 * @param sporeObj Spore object
 	 * @return Zero on success, a non-zero error code on error
 	 */
-	public int updateSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+	public int updateSS(String table, String key, HashMap<String,ByteIterator> values, Signer sporeObj)
 			throws Exception {
 
 		long st = System.nanoTime();
@@ -236,7 +231,7 @@ public class DBWrapper extends DB
 	 * @return Zero on success, a non-zero error code on error
 	 */
 	public int readSS(String table, String key, Set<String> fields,
-					  HashMap<String,ByteIterator> result, SporeUtils sporeObj) throws Exception {
+					  HashMap<String,ByteIterator> result, Signer sporeObj) throws Exception {
 
 		long st = System.nanoTime();
 		int res =_db.read(table, key, fields, result);
@@ -263,7 +258,7 @@ public class DBWrapper extends DB
 	 * @return Zero on success, a non-zero error code on error
 	 */
 	public int scanSS(String table, String startkey, int recordcount, Set<String> fields,
-					  Vector<HashMap<String,ByteIterator>> result, SporeUtils sporeObj) throws Exception {
+					  Vector<HashMap<String,ByteIterator>> result, Signer sporeObj) throws Exception {
 
 		long st = System.nanoTime();
 		int res = _db.scan(table, startkey, recordcount, fields, result);

@@ -32,7 +32,7 @@ import com.yahoo.ycsb.generator.SkewedLatestGenerator;
 import com.yahoo.ycsb.generator.UniformIntegerGenerator;
 import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
-import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.utility.Signer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -643,7 +643,7 @@ public class CoreWorkload extends Workload
 	/*
 	 * Spore related operations
 	 */
-	public boolean doInsertSS(DB db, Object threadstate, SporeUtils sporeObj) throws Exception {
+	public boolean doInsertSS(DB db, Object threadstate, Signer sporeObj) throws Exception {
 
 		int keynum=keysequence.nextInt();
 		String dbkey = buildKeyName(keynum);
@@ -654,7 +654,7 @@ public class CoreWorkload extends Workload
 			return false;
 	}
 
-	public boolean doTransactionSS(DB db, Object threadstate, SporeUtils sporeObj) throws  Exception {
+	public boolean doTransactionSS(DB db, Object threadstate, Signer sporeObj) throws  Exception {
 
 		String op=operationchooser.nextString();
 		if (op.compareTo("UPDATE") == 0) {
@@ -670,7 +670,7 @@ public class CoreWorkload extends Workload
 		return true;
 	}
 
-	public void doTransactionUpdateSS(DB db, SporeUtils sporeObj) throws Exception {
+	public void doTransactionUpdateSS(DB db, Signer sporeObj) throws Exception {
 
 		int keynum = nextKeynum();
 		String keyname=buildKeyName(keynum);
@@ -685,7 +685,7 @@ public class CoreWorkload extends Workload
 		db.updateSS(table, keyname, values, sporeObj);
 	}
 
-	public void doTransactionInsertSS(DB db, SporeUtils sporeObj) throws  Exception {
+	public void doTransactionInsertSS(DB db, Signer sporeObj) throws  Exception {
 		//choose the next key
 		int keynum=transactioninsertkeysequence.nextInt();
 		String dbkey = buildKeyName(keynum);
@@ -694,7 +694,7 @@ public class CoreWorkload extends Workload
 		db.insertSS(table, dbkey, values, sporeObj);
 	}
 
-	public void doTransactionReadSS(DB db, SporeUtils sporeObj) throws Exception {
+	public void doTransactionReadSS(DB db, Signer sporeObj) throws Exception {
 
 		//choose a random key
 		int keynum = nextKeynum();
@@ -710,7 +710,7 @@ public class CoreWorkload extends Workload
 		db.readSS(table, keyname, fields, new HashMap<String, ByteIterator>(), sporeObj);
 	}
 
-	public void doTransactionScanSS(DB db, SporeUtils sporeObj) throws Exception {
+	public void doTransactionScanSS(DB db, Signer sporeObj) throws Exception {
 
 		//choose a random key
 		int keynum = nextKeynum();

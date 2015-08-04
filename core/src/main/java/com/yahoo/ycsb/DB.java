@@ -17,7 +17,7 @@
 
 package com.yahoo.ycsb;
 
-import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.utility.Signer;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -152,18 +152,18 @@ public abstract class DB
 								 String key,
 								 HashMap<String,
 								 ByteIterator> values,
-								 SporeUtils sporeObj) throws Exception;
+								 Signer sporeObj) throws Exception;
 
 	public abstract int updateSS(String table,
 								 String key,
 								 HashMap<String, ByteIterator> values,
-								 SporeUtils sporeObj) throws Exception;
+								 Signer sporeObj) throws Exception;
 
 	public abstract int readSS(String table,
 							   String key,
 							   Set<String> fields,
 							   HashMap<String,ByteIterator> result,
-							   SporeUtils sporeObj) throws Exception;
+							   Signer sporeObj) throws Exception;
 
 
 	public abstract int scanSS(String table,
@@ -171,6 +171,6 @@ public abstract class DB
 							   int recordcount,
 							   Set<String> fields,
 							   Vector<HashMap<String,ByteIterator>> result,
-							   SporeUtils sporeObj) throws Exception;
+							   Signer sporeObj) throws Exception;
 
 }

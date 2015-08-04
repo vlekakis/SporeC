@@ -1,4 +1,4 @@
-package org.umd.spore.cloud;
+package org.umd.spore.cloud.utility;
 
 /**
  * Created by lex on 3/31/15.

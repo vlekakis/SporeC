@@ -17,8 +17,7 @@
 
 package com.yahoo.ycsb;
 
-import org.umd.spore.cloud.SporeStrings;
-import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.utility.Signer;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -226,7 +225,7 @@ public class BasicDB extends DB
      * @param values A HashMap of field/value pairs to insert in the record
      * @return Zero on success, a non-zero error code on error
      */
-    public int insertSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+    public int insertSS(String table, String key, HashMap<String,ByteIterator> values, Signer sporeObj)
 			throws Exception {
 
 		insert(table, key, values);
@@ -234,7 +233,7 @@ public class BasicDB extends DB
     }
 
 
-	public int updateSS(String table, String key, HashMap<String,ByteIterator> values, SporeUtils sporeObj)
+	public int updateSS(String table, String key, HashMap<String,ByteIterator> values, Signer sporeObj)
 			throws  Exception {
 
 		update(table, key, values);
@@ -243,14 +242,14 @@ public class BasicDB extends DB
 
 
 	@Override
-	public int readSS(String table, String key, Set<String> fields, HashMap<String,ByteIterator> result, SporeUtils sporeObj)
+	public int readSS(String table, String key, Set<String> fields, HashMap<String,ByteIterator> result, Signer sporeObj)
 			throws Exception {
 		read(table, key, fields, result);
 		return 0;
 	}
 
 	@Override
-	public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, SporeUtils sporeObj)
+	public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, Signer sporeObj)
 			throws Exception {
 		scan( table, startkey, recordcount, fields, result);
 		return 0;

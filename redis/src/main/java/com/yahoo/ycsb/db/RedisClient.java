@@ -8,7 +8,6 @@
 package com.yahoo.ycsb.db;
 import com.yahoo.ycsb.*;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import org.umd.spore.cloud.SporeUtils;
+import org.umd.spore.cloud.utility.Signer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 
@@ -130,22 +129,22 @@ public class RedisClient extends DB {
      * These are just stubs that we do not use but we need to have
      */
     @Override
-    public int insertSS(String table, String key, HashMap<String, ByteIterator> values, SporeUtils sporeObj) throws Exception {
+    public int insertSS(String table, String key, HashMap<String, ByteIterator> values, Signer sporeObj) throws Exception {
         return 0;
     }
 
     @Override
-    public int updateSS(String table, String key, HashMap<String, ByteIterator> values, SporeUtils sporeObj) throws Exception {
+    public int updateSS(String table, String key, HashMap<String, ByteIterator> values, Signer sporeObj) throws Exception {
         return 0;
     }
 
     @Override
-    public int readSS(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result, SporeUtils sporeObj) throws Exception {
+    public int readSS(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result, Signer sporeObj) throws Exception {
         return 0;
     }
 
     @Override
-    public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, SporeUtils sporeObj) throws Exception {
+    public int scanSS(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result, Signer sporeObj) throws Exception {
         return 0;
     }
 }
