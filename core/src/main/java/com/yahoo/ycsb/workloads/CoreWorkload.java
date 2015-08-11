@@ -17,6 +17,7 @@
 
 package com.yahoo.ycsb.workloads;
 
+import java.security.PrivateKey;
 import java.util.Properties;
 import com.yahoo.ycsb.*;
 import com.yahoo.ycsb.generator.CounterGenerator;
@@ -32,6 +33,7 @@ import com.yahoo.ycsb.generator.SkewedLatestGenerator;
 import com.yahoo.ycsb.generator.UniformIntegerGenerator;
 import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
+import org.apache.commons.lang3.StringUtils;
 import org.umd.spore.cloud.utility.Signer;
 
 import java.io.IOException;
@@ -654,6 +656,56 @@ public class CoreWorkload extends Workload
 			return false;
 	}
 
+    HashMap<String, ByteIterator> buildValuesChain() {
+        HashMap<String, ByteIterator> values = new HashMap<String, ByteIterator>();
+
+        for (int i = 0; i < fieldcount; i++) {
+
+            String fieldKey = StringUtils.EMPTY;
+            int length = fieldlengthgenerator.nextInt();
+            if (i == fieldcount - 1) {
+                fieldKey = "hmac-hook";
+                ByteIterator chainData = new StringByteIterator("default");
+                values.put(fieldKey, chainData);
+
+            } else {
+                fieldKey = "field" + i;
+                ByteIterator data = new RandomByteIterator(length);
+                values.put(fieldKey, data);
+            }
+        }
+        return values;
+    }
+
+
+    public boolean doInsertChain(DB db, Object threadstate, Signer sporeObj) throws Exception {
+        int keynum=keysequence.nextInt();
+        String dbkey = buildKeyName(keynum);
+        HashMap<String, ByteIterator> values = buildValuesChain();
+        if (db.insert(table, dbkey, values) == 0)
+            return true;
+        else
+            return false;
+    }
+
+
+    public boolean doTransactionChain(DB db, Object threadstate, Signer sporeObj) throws  Exception {
+        String op=operationchooser.nextString();
+        if (op.compareTo("UPDATE") == 0) {
+            doTransactionUpdateChain(db, sporeObj.getPrivateKey());
+
+        } else if (op.compareTo("INSERT") == 0) {
+            doTransactionInsertChain(db, sporeObj.getPrivateKey());
+
+        } else if (op.compareTo("READ") == 0) {
+            doTransactionReadChain(db, sporeObj.getPrivateKey());
+
+        } else if (op.compareTo("SCAN") == 0) {
+            doTransactionScanChain(db, sporeObj.getPrivateKey());
+        }
+		return true;
+    }
+
 	public boolean doTransactionSS(DB db, Object threadstate, Signer sporeObj) throws  Exception {
 
 		String op=operationchooser.nextString();
@@ -685,6 +737,16 @@ public class CoreWorkload extends Workload
 		db.updateSS(table, keyname, values, sporeObj);
 	}
 
+    /*
+        It does a single value update only
+     */
+    public void doTransactionUpdateChain(DB db, PrivateKey key) {
+        int keyNum = nextKeynum();
+        String keyname=buildKeyName(keyNum);
+        HashMap<String,ByteIterator> values = buildUpdate();
+        db.updateChain(table, keyname, values, key);
+    }
+
 	public void doTransactionInsertSS(DB db, Signer sporeObj) throws  Exception {
 		//choose the next key
 		int keynum=transactioninsertkeysequence.nextInt();
@@ -693,6 +755,10 @@ public class CoreWorkload extends Workload
 
 		db.insertSS(table, dbkey, values, sporeObj);
 	}
+
+    public void doTransactionInsertChain(DB db, PrivateKey key) {
+        //TODO add code
+    }
 
 	public void doTransactionReadSS(DB db, Signer sporeObj) throws Exception {
 
@@ -708,7 +774,11 @@ public class CoreWorkload extends Workload
 			fields.add(fieldname);
 		}
 		db.readSS(table, keyname, fields, new HashMap<String, ByteIterator>(), sporeObj);
-	}
+    }
+
+    public void doTransactionReadChain(DB db, PrivateKey key) {
+        //TODO add code
+    }
 
 	public void doTransactionScanSS(DB db, Signer sporeObj) throws Exception {
 
@@ -729,6 +799,10 @@ public class CoreWorkload extends Workload
 
 		db.scanSS(table, startkeyname, len, fields, new Vector<HashMap<String, ByteIterator>>(), sporeObj);
 	}
+
+    public void doTransactionScanChain(DB db, PrivateKey key) {
+        //TODO add code
+    }
 
 
 

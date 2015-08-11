@@ -17,6 +17,7 @@
 
 package com.yahoo.ycsb;
 
+import java.security.PrivateKey;
 import java.util.*;
 
 import com.yahoo.ycsb.measurements.Measurements;
@@ -220,6 +221,12 @@ public class DBWrapper extends DB
 		return res;
 	}
 
+
+	public int updateChain(String table, String key, HashMap<String, ByteIterator> values, PrivateKey privateKey) {
+		//TODO
+		return 0;
+	}
+
 	/**
 	 * Read a record from the database. Each field/value pair from the result will be stored in a HashMap.
 	 *
@@ -244,6 +251,8 @@ public class DBWrapper extends DB
 		measurementUtil(st, en, SporeStrings.SS_VERIFY_ON_READ, 0);
 		return res;
 	}
+
+
 
 
 	/**

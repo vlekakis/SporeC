@@ -23,14 +23,24 @@ COMMANDS = {
     },
     "loadSS" : {
             "command"     : "-loadSS",
-            "description" : "Execute the load phase",
+            "description" : "Execute the load phase with Simple signatures",
             "main"        : "com.yahoo.ycsb.Client",
-     },
-     "runSS" : {
+    },
+    "runSS" : {
                  "command"     : "-runSS",
-                 "description" : "Execute the load phase",
+                 "description" : "Execute the transaction phase with Simple Signatures",
                  "main"        : "com.yahoo.ycsb.Client",
           },
+    "runChain" : {
+                      "command"     : "-runChain",
+                      "description" : "Execute the transaction phase with Spore Chains",
+                      "main"        : "com.yahoo.ycsb.Client",
+               },
+    "loadChain" : {
+               "command"     : "-loadChain",
+               "description" : "Execute the load phase with Spore Chains",
+               "main"        : "com.yahoo.ycsb.Client",
+       },
 
 }
 

@@ -19,6 +19,7 @@ package com.yahoo.ycsb;
 
 import org.umd.spore.cloud.utility.Signer;
 
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -142,7 +143,7 @@ public abstract class DB
      *
      *
      *
-     * SPORE: This insert is for the simple signature
+     * SPORE: Simple Signature
      *
      *
      *
@@ -172,5 +173,18 @@ public abstract class DB
 							   Set<String> fields,
 							   Vector<HashMap<String,ByteIterator>> result,
 							   Signer sporeObj) throws Exception;
+
+
+	/*
+     *
+     *
+     *
+     * SPORE: Chain
+     *
+     *
+     *
+     *
+     */
+	public abstract int updateChain(String table, String key, HashMap<String,ByteIterator> values, PrivateKey privateKey);
 
 }

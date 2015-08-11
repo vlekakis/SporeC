@@ -114,8 +114,11 @@
         else return false;
       }
 
-    public abstract boolean doInsertSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
-    public abstract boolean doTransactionSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
+
+      public abstract boolean doInsertSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
+      public abstract boolean doInsertChain(DB db, Object threadstate, Signer sporeObj) throws Exception;
+      public abstract boolean doTransactionSS(DB db, Object threadstate, Signer sporeObj) throws Exception;
+      public abstract boolean doTransactionChain(DB db, Object threadstate, Signer sporeObj) throws Exception;
 
     }
 

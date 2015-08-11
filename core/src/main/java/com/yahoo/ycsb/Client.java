@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,9 +37,7 @@ import java.util.Vector;
 import com.yahoo.ycsb.workloads.CoreWorkload;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import org.umd.spore.cloud.utility.SporeStrings;
-import org.umd.spore.cloud.utility.Signer;
-import org.umd.spore.cloud.utility.SporeValues;
+import org.umd.spore.cloud.utility.*;
 
 //import org.apache.log4j.BasicConfigurator;
 
@@ -48,6 +47,7 @@ import org.umd.spore.cloud.utility.SporeValues;
  * @author cooperb
  *
  */
+
 class StatusThread extends Thread
 {
 	Vector<Thread> _threads;
@@ -150,6 +150,7 @@ class StatusThread extends Thread
  * @author cooperb
  *
  */
+
 class ClientThread extends Thread
 {
 	DB _db;
@@ -187,7 +188,7 @@ class ClientThread extends Thread
 	 * @param targetperthreadperms target number of operations per thread per ms
 	 * //Spore
 	 * @param  loadType Distinguish between types of loading: Default, Simple Signature(SS)
-	 * @param runType Distringuish between types of running: Default, Simple Signature(SS)
+	 * @param runType Distringuish between types of running: Default, Simple Signature(SS), Chain
 	 */
 	public ClientThread(DB db,
                         boolean dotransactions,
@@ -284,9 +285,10 @@ class ClientThread extends Thread
 		{
 			if (_dotransactions)
 			{
-				boolean runSimpleSignature = (_runType.equals("runSS"))? true:false;
-				boolean runDefault = (_runType.equals("run"))? true:false;
-				if (runSimpleSignature) {
+				boolean runSimpleSignature = (_runType.equals(RunTypes.SIMPLESIGNATURE.getRunType()))? true:false;
+				boolean runDefault = (_runType.equals(RunTypes.DEFAULT.getRunType()))? true:false;
+				boolean runChain = (_runType.equals(RunTypes.CHAIN.getRunType()))? true:false;
+				if (runSimpleSignature || runChain) {
 					initSporeObject();
 				}
 
@@ -300,7 +302,10 @@ class ClientThread extends Thread
 					} else if (runSimpleSignature &&
 							!_workload.doTransactionSS(_db,_workloadstate,_sporeObj)) {
 						break;
-					}
+					} else if (runChain &&
+                            !_workload.doTransactionChain(_db, _workloadstate, _sporeObj)) {
+                        break;
+                    }
 
 					_opsdone++;
 
@@ -328,8 +333,9 @@ class ClientThread extends Thread
 			}
 			else
 			{
-                boolean loadSimpleSignature = (_loadType.equals("loadSS"))? true:false;
-                boolean loadDefault = (_loadType.equals("load"))? true:false;
+                boolean loadSimpleSignature = (_loadType.equals(LoadTypes.SIMPLESIGNATURE.getLoadType()))? true:false;
+                boolean loadDefault = (_loadType.equals(LoadTypes.DEFAULT.getLoadType()))? true:false;
+                boolean loadChain =  (_loadType.equals(LoadTypes.CHAIN.getLoadType()))? true:false;
 				if (loadSimpleSignature) {
 					initSporeObject();
 				}
@@ -345,8 +351,13 @@ class ClientThread extends Thread
 						} else if (loadSimpleSignature &&
 								!_workload.doInsertSS(_db, _workloadstate, _sporeObj)) {
 							break;
-						}
+						} else if (loadChain &&
+                                !_workload.doInsertChain(_db, _workloadstate, _sporeObj)) {
+                            break;
+                        }
 					} catch (Exception e) {
+						System.err.println(e.getMessage());
+						e.printStackTrace();
 						System.err.println("Exception inserting data");
 					}
 
@@ -531,7 +542,8 @@ public class Client
 			System.exit(0);
 		}
 
-		while (args[argindex].startsWith("-"))
+
+        while (args[argindex].startsWith("-"))
 		{
 			if (args[argindex].compareTo("-threads")==0)
 			{
@@ -558,27 +570,38 @@ public class Client
 				int ttarget=Integer.parseInt(args[argindex]);
 				props.setProperty("target", ttarget+"");
 				argindex++;
-			}
-            else if (args[argindex].compareTo("-loadSS") == 0) {
+
+			} else if (args[argindex].compareTo(LoadTypes.CHAIN.getCliArg()) == 0) {
                 //SPORE change to load data for the Redis Simple signature client
-                loadType = "loadSS";
+                loadType = LoadTypes.CHAIN.getLoadType();
+                dotransactions = false;
+                argindex++;
+
+            } else if (args[argindex].compareTo(LoadTypes.SIMPLESIGNATURE.getCliArg()) == 0) {
+                //SPORE change to load data for the Redis Simple signature client
+                loadType = LoadTypes.SIMPLESIGNATURE.getLoadType();
                 dotransactions = false;
                 argindex++;
             }
-			else if (args[argindex].compareTo("-load")==0)
+			else if (args[argindex].compareTo(LoadTypes.DEFAULT.getCliArg())==0)
 			{
-                loadType = "load";
+                loadType = LoadTypes.DEFAULT.getLoadType();
 				dotransactions=false;
 				argindex++;
 			}
 			else if (args[argindex].compareTo("-t")==0)
 			{
-				runType = "run";
+				runType = RunTypes.DEFAULT.getRunType();
 				dotransactions=true;
 				argindex++;
 			}
-			else if (args[argindex].compareTo("-runSS") == 0) {
-				runType = "runSS";
+			else if (args[argindex].compareTo(RunTypes.SIMPLESIGNATURE.getCliArg()) == 0) {
+				runType = RunTypes.SIMPLESIGNATURE.getRunType();
+				dotransactions = true;
+				argindex++;
+			}
+			else if (args[argindex].compareTo(RunTypes.CHAIN.getCliArg()) == 0) {
+				runType = RunTypes.CHAIN.getRunType();
 				dotransactions = true;
 				argindex++;
 			}
@@ -595,7 +618,7 @@ public class Client
 					usageMessage();
 					System.exit(0);
 				}
-				props.setProperty("db",args[argindex]);
+				props.setProperty("db", args[argindex]);
 				argindex++;
 			}
 			else if (args[argindex].compareTo("-l")==0)
